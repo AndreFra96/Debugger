@@ -24,38 +24,52 @@ class Debugger
     private $locationStatus;
     private $groupStatus;
     private $conn;
+    private $servername;
+    private $username;
+    private $password;
+    private $dbname;
 
     /**
-     * Post-condizioni: Inizializza un nuovo Debugger connettendolo al database attraverso il file di connessione in input
-     * solleva InvalidArgumentException se non è possibile connettersi ad un database con $conn
-     * solleva NullPointerException se $conn è null
+     * Post-condizioni:Effettua la connessione con il database attraverso i parametri indicati in input
+     * ,solleva InvalidArgumentException se la connessione al database fallisce
      */
-    function __constructor($conn)
+    function connect($servername, $username, $password, $dbname)
     {
-        if ($conn == null) throw new NullPointerException();
-        // Check connection
-        if ($conn->connect_error) {
-            throw new \InvalidArgumentException("Il file di connessione non è valido, impossibile stabilire la connessione con il database");
-        }
-        $this->conn = $conn;
-    }
-
-    /**
-     * Post-condizioni: Inizializza un nuovo Debugger connettendolo ad database attraverso i parametri di connessione in inpup
-     * solleva InvalidArgumentException se i parametri non permettono la connessione ad un database
-     * solleva NullPointerException se uno o più parametri in input è null
-     */
-    function __constructor1(string $servername, string $username, string $password, string $dbname)
-    {
-        if ($servername == null || $username == null || $password == null || $dbname == null) throw new NullPointerException();
-        // Create connection
         $conn = new \mysqli($servername, $username, $password, $dbname);
 
         // Check connection
         if ($conn->connect_error) {
             throw new \InvalidArgumentException("Parametri di connessione non validi, impossibile stabilire la connessione con il database");
         }
+
+        $this->servername = $servername;
+        $this->username = $username;
+        $this->password = $password;
+        $this->dbname = $dbname;
         $this->conn = $conn;
+    }
+
+    /**
+     * Post-condizioni: restituisce un array contente i parametri di connessione al database attuali del Debugger
+     */
+    function getParameter()
+    {
+        return [
+            "username" => $this->username,
+            "dbname" => $this->dbname,
+            "password" => $this->password,
+            "servername" => $this->servername,
+        ];
+    }
+
+    /**
+     * Post-condizioni: restituisce true se il debugger è in grado di connettersi al database, false altrimenti
+     */
+    function connectionOk()
+    {
+        if ($this->conn->connect_error)
+            return false;
+        return true;
     }
 
     /**
@@ -157,14 +171,15 @@ class Debugger
 
     function __toString()
     {
-        $returnString = "Stato ordini: " . ($this->orderStatus?"Ok":"Error");
-        $returnString .= ", Stato items: " . ($this->itemsStatus?"Ok":"Error");
-        $returnString .= ", Stato rinnovi: " . ($this->renewStatus?"Ok":"Error");
-        $returnString .= ", Stato mensili: " . ($this->monthlyStatus?"Ok":"Error");
-        $returnString .= ", Stato seriali: " . ($this->serialStatus?"Ok":"Error");
-        $returnString .= ", Stato clienti: " . ($this->customerStatus?"Ok":"Error");
-        $returnString .= ", Stato locali: " . ($this->locationStatus?"Ok":"Error");
-        $returnString .= ", Stato gruppi: " . ($this->groupStatus?"Ok":"Error");
+        $returnString = "Connessione al db " . $this->dbConnectionStatus() ? "avvenuta con successo" : "non riuscita";
+        $returnString .= "Stato ordini: " . ($this->orderStatus ? "Ok" : "Error");
+        $returnString .= ", Stato items: " . ($this->itemsStatus ? "Ok" : "Error");
+        $returnString .= ", Stato rinnovi: " . ($this->renewStatus ? "Ok" : "Error");
+        $returnString .= ", Stato mensili: " . ($this->monthlyStatus ? "Ok" : "Error");
+        $returnString .= ", Stato seriali: " . ($this->serialStatus ? "Ok" : "Error");
+        $returnString .= ", Stato clienti: " . ($this->customerStatus ? "Ok" : "Error");
+        $returnString .= ", Stato locali: " . ($this->locationStatus ? "Ok" : "Error");
+        $returnString .= ", Stato gruppi: " . ($this->groupStatus ? "Ok" : "Error");
         return $returnString;
     }
 }
