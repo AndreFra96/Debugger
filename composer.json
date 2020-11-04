@@ -1,7 +1,7 @@
 {
     "name": "andrefra96/debugger",
     "type": "library",
-    "description": ":package_description",
+    "description": "Debugger for specific web app database",
     "keywords": [
         "AndreFra96",
         "Debugger"
@@ -25,12 +25,12 @@
     },
     "autoload": {
         "psr-4": {
-            ":vendor\\:package_name\\": "src"
+            "AndreFra96\\Debugger\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            ":vendor\\:package_name\\": "tests"
+            "AndreFra96\\Debugger\\": "tests"
         }
     },
     "scripts": {
