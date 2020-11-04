@@ -37,8 +37,9 @@ $ composer require AndreFra96/Debugger
 ## Usage
 
 ``` php
-$skeleton = new AndreFra96\Debugger();
-echo $skeleton->echoPhrase('Hello, League!');
+$debugger = new AndreFra96\Debugger();
+$debugger->connect("localhost","root","","dbname");
+$debugger->debug();
 ```
 
 ## Change log
