@@ -38,7 +38,8 @@ $ composer require AndreFra96/Debugger
 
 ``` php
 $skeleton = new AndreFra96\Debugger();
-echo $skeleton->echoPhrase('Hello, League!');
+$skeleton->connect("localhost","root","","dbname");
+$sketelon->debug();
 ```
 
 ## Change log
