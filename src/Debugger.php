@@ -171,7 +171,7 @@ class Debugger
 
     function __toString()
     {
-        $returnString = "Connessione al db " . $this->dbConnectionStatus() ? "avvenuta con successo" : "non riuscita";
+        $returnString = "Connessione al db " . $this->connectionOk() ? "avvenuta con successo" : "non riuscita";
         $returnString .= "Stato ordini: " . ($this->orderStatus ? "Ok" : "Error");
         $returnString .= ", Stato items: " . ($this->itemsStatus ? "Ok" : "Error");
         $returnString .= ", Stato rinnovi: " . ($this->renewStatus ? "Ok" : "Error");
