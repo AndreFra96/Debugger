@@ -157,14 +157,14 @@ class Debugger
 
     function __toString()
     {
-        $returnString = "Stato ordini: " . $this->orderStatus;
-        $returnString .= "\nStato items: " . $this->itemsStatus;
-        $returnString .= "\nStato rinnovi: " . $this->renewStatus;
-        $returnString .= "\nStato mensili: " . $this->monthlyStatus;
-        $returnString .= "\nStato seriali: " . $this->serialStatus;
-        $returnString .= "\nStato clienti: " . $this->customerStatus;
-        $returnString .= "\nStato locali: " . $this->locationStatus;
-        $returnString .= "\nStato gruppi: " . $this->groupStatus;
+        $returnString = "Stato ordini: " . ($this->orderStatus?"Ok":"Error");
+        $returnString .= ", Stato items: " . ($this->itemsStatus?"Ok":"Error");
+        $returnString .= ", Stato rinnovi: " . ($this->renewStatus?"Ok":"Error");
+        $returnString .= ", Stato mensili: " . ($this->monthlyStatus?"Ok":"Error");
+        $returnString .= ", Stato seriali: " . ($this->serialStatus?"Ok":"Error");
+        $returnString .= ", Stato clienti: " . ($this->customerStatus?"Ok":"Error");
+        $returnString .= ", Stato locali: " . ($this->locationStatus?"Ok":"Error");
+        $returnString .= ", Stato gruppi: " . ($this->groupStatus?"Ok":"Error");
         return $returnString;
     }
 }
