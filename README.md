@@ -37,10 +37,6 @@ $ composer require AndreFra96/Debugger
 ## Usage
 
 ``` php
-$skeleton = new AndreFra96\Debugger();
-$skeleton->connect("localhost","root","","dbname");
-$sketelon->debug();
-=======
 $debugger = new AndreFra96\Debugger();
 $debugger->connect("localhost","root","","dbname");
 $debugger->debug();
