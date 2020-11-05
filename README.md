@@ -37,7 +37,6 @@ $ composer require AndreFra96/Debugger
 ## Usage
 
 ``` php
-<<<<<<< HEAD
 $skeleton = new AndreFra96\Debugger();
 $skeleton->connect("localhost","root","","dbname");
 $sketelon->debug();
@@ -45,7 +44,6 @@ $sketelon->debug();
 $debugger = new AndreFra96\Debugger();
 $debugger->connect("localhost","root","","dbname");
 $debugger->debug();
->>>>>>> 41ddb22b32fa03c4b2f361efcec1710ec7cafe00
 ```
 
 ## Change log
