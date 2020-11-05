@@ -59,7 +59,7 @@ class Debugger
         $this->password = $password;
         $this->dbname = $dbname;
         $this->conn = $conn;
-        
+
         return true;
     }
 
@@ -87,8 +87,9 @@ class Debugger
     }
 
     /**
-     * Effetti-collaterali: Potrebbe modificare lo stato di this, aggiornando lo stato dei diversi attributi in base alla loro validità attuale
-     * Post-condizioni: modifica gli attributi di this in base alla risposta delle funzioni di controllo
+     * - Effetti-collaterali: Potrebbe modificare lo stato di this, aggiornando lo stato dei diversi attributi in base alla loro validità attuale
+     * - Post-condizioni: modifica gli attributi di this in base alla risposta delle funzioni di controllo 
+     * e restituisce un array contenente lo stato attuale
      */
     function debug()
     {
@@ -100,6 +101,7 @@ class Debugger
         $this->customerStatus = $this->checkCustomer();
         $this->locationStatus = $this->checkLocation();
         $this->groupStatus = $this->checkGroup();
+        return $this->getStatus();
     }
 
     /**
@@ -120,18 +122,39 @@ class Debugger
         }
     }
 
-    function repairOrder()
+    /**
+     * Post-condizioni: restituisce un array contenente gli order_id degli ordini senza articoli collegati
+     *                  solleva FalseQueryException se la query di ricerca restituisce false
+     */
+    function orderErrors()
     {
+        $orders = [];
         if ($result = $this->conn->query("SELECT t_order.order_id
         FROM t_order
         LEFT JOIN t_order_item
         ON t_order.order_id = t_order_item.order_id
         WHERE t_order_item.order_id IS NULL")) {
             while ($line = $result->fetch_array()) {
-                $this->conn->query("DELETE FROM t_order WHERE order_id = " . $line['order_id']);
+                array_push($orders, $line['order_id']);
             }
         } else {
             throw new \AndreFra96\Debugger\FalseQueryException();
+        }
+        return $orders;
+    }
+
+    /**
+     * Effetti-collaterali: effettua delle modifiche alla tabella t_order del database
+     * Post-condizioni: elimina tutti i record della t_order restituiti dalla funzione orderErrors()
+     *                  solleva FalseQueryException se la query restituisce false
+     */
+    function repairOrder()
+    {
+        $errors = $this->orderErrors();
+        foreach ($errors as $index => $value) {
+            if (!($this->conn->query("DELETE FROM t_order WHERE order_id = " . $value))) {
+                throw new \AndreFra96\Debugger\FalseQueryException();
+            }
         }
     }
 
@@ -140,8 +163,56 @@ class Debugger
      */
     function checkItems()
     {
-        return false;
+        $result = $this->conn->query("SELECT count(*)
+        FROM t_order_item
+        LEFT JOIN t_order
+        ON t_order_item.order_id = t_order.order_id
+        WHERE t_order.order_id IS NULL");
+        if (($result->fetch_array())['count(*)'] == 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
+
+    /**
+     * Post-condizioni: restituisce un array contenente gli item_id degli articoli senza ordine collegato
+     *                  solleva FalseQueryException se la query di ricerca restituisce false
+     */
+    function itemsErrors()
+    {
+        $items = [];
+        if ($result = $this->conn->query("SELECT t_order_item.item_id
+        FROM t_order_item
+        LEFT JOIN t_order
+        ON t_order_item.order_id = t_order.order_id
+        WHERE t_order.order_id IS NULL")) {
+            while ($line = $result->fetch_array()) {
+                array_push($items, $line['item_id']);
+            }
+        } else {
+            throw new \AndreFra96\Debugger\FalseQueryException();
+        }
+        return $items;
+    }
+
+    /**
+     * Effetti-collaterali: effettua delle modifiche alla tabella t_order del database
+     * Post-condizioni: elimina tutti i record della t_order_item restituiti dalla funzione itemsErrors()
+     *                  solleva FalseQueryException se la query restituisce false
+     */
+    function repairItems()
+    {
+        $errors = $this->orderErrors();
+        foreach ($errors as $index => $value) {
+            if (!($this->conn->query("DELETE FROM t_order_item WHERE item_id = " . $value))) {
+                throw new \AndreFra96\Debugger\FalseQueryException();
+            }
+        }
+    }
+
+
+
 
     /**
      * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
