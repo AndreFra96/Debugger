@@ -85,6 +85,23 @@ class Debugger
             return false;
         return true;
     }
+    
+    /**
+     * Post-condizioni: restituisce un array contenente le informazioni attuali sugli stati, es: [orderStatus=>true,itemStatus=>true...]
+     */
+    function getStatus()
+    {
+        return [
+            "orderStatus" => $this->orderStatus,
+            "itemsStatus" => $this->itemsStatus,
+            "renewStatus" => $this->renewStatus,
+            "monthlyStatus" => $this->monthlyStatus,
+            "serialStatus" => $this->serialStatus,
+            "customerStatus" => $this->customerStatus,
+            "locationStatus" => $this->locationStatus,
+            "groupStatus" => $this->groupStatus
+        ];
+    }
 
     /**
      * - Effetti-collaterali: Potrebbe modificare lo stato di this, aggiornando lo stato dei diversi attributi in base alla loro validità attuale
@@ -262,22 +279,7 @@ class Debugger
         return false;
     }
 
-    /**
-     * Post-condizioni: restituisce un array contenente le informazioni attuali sugli stati, es: [orderStatus=>true,itemStatus=>true...]
-     */
-    function getStatus()
-    {
-        return [
-            "orderStatus" => $this->orderStatus,
-            "itemsStatus" => $this->itemsStatus,
-            "renewStatus" => $this->renewStatus,
-            "monthlyStatus" => $this->monthlyStatus,
-            "serialStatus" => $this->serialStatus,
-            "customerStatus" => $this->customerStatus,
-            "locationStatus" => $this->locationStatus,
-            "groupStatus" => $this->groupStatus
-        ];
-    }
+    
 
     function __toString()
     {

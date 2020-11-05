@@ -9,7 +9,11 @@
 
 
   <h1>Index di Debugger</h1>
-  <!-- modale connessione db -->
+
+  <!--////////////////////////////////
+  /////START DB CONNECTION MODAL//////
+  /////////////////////////////////-->
+
   <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
       <div class="modal-content">
@@ -41,7 +45,16 @@
     </div>
   </div>
 </head>
+
+<!--//////////////////////////////
+/////END DB CONNECTION MODAL//////
+///////////////////////////////-->
+
 <?php
+////////////////////////////
+/////START PHP SECTION//////
+////////////////////////////
+
 session_start();
 
 if (!isset($_SESSION['servername'])) {
@@ -67,7 +80,7 @@ $status = $debugger->getStatus();
 if ($debugger->connect($_SESSION['servername'], $_SESSION['username'], $_SESSION['password'], $_SESSION['dbname'])) {
   $debugger->debug();
   $status = $debugger->getStatus();
-  echo "Connesso a ".$_SESSION['dbname']." User: ".$_SESSION['username'];
+  echo "Connesso a " . $_SESSION['dbname'] . " User: " . $_SESSION['username'];
 } else {
   echo "Nessun database connesso";
 }
@@ -82,11 +95,17 @@ echo '<script type="text/javascript">',
   'document.getElementById("password").value = "' . $_SESSION['password'] . '";',
   'document.getElementById("dbname").value = "' . $_SESSION['dbname'] . '"',
   '</script>';
+
+//////////////////////////
+/////END PHP SECTION//////
+//////////////////////////
 ?>
 
 <body>
 
-
+  <!--///////////////////
+  /////START NAVBAR//////
+  ////////////////////-->
   <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
     <a class="navbar-brand" href="#">Debugger</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,7 +114,7 @@ echo '<script type="text/javascript">',
 
     <div class="collapse navbar-collapse" id="navbarsExampleDefault">
       <ul class="navbar-nav mr-auto">
-        
+
         <li class="nav-item">
           <a class="nav-link" id="toggleDebugging" href="#"></a>
         </li>
@@ -117,8 +136,16 @@ echo '<script type="text/javascript">',
       </form>
     </div>
   </nav>
+
+  <!--/////////////////
+  /////END NAVBAR//////
+  //////////////////-->
+
   <div class="container-fluid" style="width:80%">
     <div class="row">
+      <!--/////////////////
+      /////START TABLE/////
+      //////////////////-->
       <table class="table table-hover" style="text-align:center">
         <thead>
           <tr>
@@ -252,6 +279,9 @@ echo '<script type="text/javascript">',
 
         </tbody>
       </table>
+      <!--/////////////////
+      /////END TABLE///////
+      //////////////////-->
     </div>
   </div>
 
@@ -260,23 +290,29 @@ echo '<script type="text/javascript">',
 <script type="text/javascript" src="assets/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="assets/bootstrap/dist/js/bootstrap.min.js"></script>
 <script>
+  //////////////////////////////////
+  /////START JAVASCRIPT SECTION/////
+  //////////////////////////////////
   var toggleDebugging = document.getElementById("toggleDebugging");
   var timeout;
   if (sessionStorage.getItem("debuggingLoop") == 1) {
-    timeout = setTimeout('location.href="http://'+location.hostname+'/debugger"', 2000);
+    timeout = setTimeout('location.href="http://' + location.hostname + '/debugger"', 2000);
     toggleDebugging.innerHTML = "<i class='fas fa-pause'></i>";
     toggleDebugging.addEventListener("click", function() {
       sessionStorage.setItem("debuggingLoop", 0);
-      location.href="http://"+location.hostname+"/debugger";
+      location.href = "http://" + location.hostname + "/debugger";
     });
   } else {
     clearTimeout(timeout);
     toggleDebugging.innerHTML = "<i class='fas fa-play'></i>";
     toggleDebugging.addEventListener("click", function() {
       sessionStorage.setItem("debuggingLoop", 1);
-      location.href="http://"+location.hostname+"/debugger";
+      location.href = "http://" + location.hostname + "/debugger";
     });
   }
+  ////////////////////////////////
+  /////END JAVASCRIPT SECTION/////
+  ////////////////////////////////
 </script>
 
 </html>
