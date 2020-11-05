@@ -18,6 +18,7 @@ class Debugger
     private $orderStatus;
     private $itemsStatus;
     private $renewStatus;
+    private $renewItemsStatus;
     private $monthlyStatus;
     private $serialStatus;
     private $customerStatus;
@@ -85,7 +86,7 @@ class Debugger
             return false;
         return true;
     }
-    
+
     /**
      * Post-condizioni: restituisce un array contenente le informazioni attuali sugli stati, es: [orderStatus=>true,itemStatus=>true...]
      */
@@ -95,6 +96,7 @@ class Debugger
             "orderStatus" => $this->orderStatus,
             "itemsStatus" => $this->itemsStatus,
             "renewStatus" => $this->renewStatus,
+            "renewItemsStatus" => $this->renewItemsStatus,
             "monthlyStatus" => $this->monthlyStatus,
             "serialStatus" => $this->serialStatus,
             "customerStatus" => $this->customerStatus,
@@ -113,6 +115,7 @@ class Debugger
         $this->orderStatus = $this->checkOrder();
         $this->itemsStatus = $this->checkItems();
         $this->renewStatus = $this->checkRenew();
+        $this->renewItemsStatus = $this->checkRenewItems();
         $this->monthlyStatus = $this->checkMonthly();
         $this->serialStatus = $this->checkSerial();
         $this->customerStatus = $this->checkCustomer();
@@ -229,14 +232,65 @@ class Debugger
     }
 
 
-
-
     /**
      * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
      */
     function checkRenew()
     {
+        $result = $this->conn->query("SELECT count(*)
+        FROM t_rinnovi
+        LEFT JOIN t_rinnovi_items
+        ON t_rinnovi.rinnovo_id = t_rinnovi_items.rinnovo_id
+        WHERE t_rinnovi_items.rinnovo_id IS NULL");
+        if (($result->fetch_array())['count(*)'] == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
+     */
+    function checkRenewItems()
+    {
         return false;
+    }
+
+    /**
+     * Post-condizioni: restituisce un array contenente gli rinnovo_id dei rinnovi senza articoli collegati
+     *                  solleva FalseQueryException se la query di ricerca restituisce false
+     */
+    function renewErrors()
+    {
+        $renews = [];
+        if ($result = $this->conn->query("SELECT t_rinnovi.rinnovo_id
+        FROM t_rinnovi
+        LEFT JOIN t_rinnovi_items
+        ON t_rinnovi.rinnovo_id = t_rinnovi_items.rinnovo_id
+        WHERE t_rinnovi_items.rinnovo_id IS NULL")) {
+            while ($line = $result->fetch_array()) {
+                array_push($renews, $line['rinnovo_id']);
+            }
+        } else {
+            throw new \AndreFra96\Debugger\FalseQueryException();
+        }
+        return $renews;
+    }
+
+    /**
+     * Effetti-collaterali: effettua delle modifiche alla tabella t_rinnovi del database
+     * Post-condizioni: elimina tutti i record della t_rinnovi restituiti dalla funzione renewErrors()
+     *                  solleva FalseQueryException se la query restituisce false
+     */
+    function repairRenew()
+    {
+        $errors = $this->renewErrors();
+        foreach ($errors as $index => $value) {
+            if (!($this->conn->query("DELETE FROM t_rinnovi WHERE rinnovo_id = " . $value))) {
+                throw new \AndreFra96\Debugger\FalseQueryException();
+            }
+        }
     }
 
     /**

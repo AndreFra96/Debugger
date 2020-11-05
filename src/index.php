@@ -80,7 +80,7 @@ $status = $debugger->getStatus();
 if ($debugger->connect($_SESSION['servername'], $_SESSION['username'], $_SESSION['password'], $_SESSION['dbname'])) {
   $debugger->debug();
   $status = $debugger->getStatus();
-  echo "Connesso a " . $_SESSION['dbname'] . " User: " . $_SESSION['username'];
+  echo "Connesso a " . $_SESSION['dbname'] . " - user: " . $_SESSION['username'];
 } else {
   echo "Nessun database connesso";
 }
@@ -169,7 +169,7 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@mdo</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
@@ -184,12 +184,12 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@fat</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
             <th scope="row">3</th>
-            <td>Rinnovi</td>
+            <td>Rinnovi senza items</td>
             <td>
               <div class="progress">
                 <?php if ($status['renewStatus']) { ?>
@@ -199,11 +199,26 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@twitter</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
             <th scope="row">4</th>
+            <td>Items senza rinnovo</td>
+            <td>
+              <div class="progress">
+                <?php if ($status['renewItemsStatus']) { ?>
+                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                <?php } else { ?>
+                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                <?php } ?>
+              </div>
+            </td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
+          </tr>
+
+          <tr>
+            <th scope="row">5</th>
             <td>Mensili</td>
             <td>
               <div class="progress">
@@ -214,11 +229,11 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@mdo</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
-            <th scope="row">5</th>
+            <th scope="row">6</th>
             <td>Seriali</td>
             <td>
               <div class="progress">
@@ -229,11 +244,11 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@mdo</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
-            <th scope="row">6</th>
+            <th scope="row">7</th>
             <td>Clienti</td>
             <td>
               <div class="progress">
@@ -244,11 +259,11 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@mdo</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
-            <th scope="row">7</th>
+            <th scope="row">8</th>
             <td>Locali</td>
             <td>
               <div class="progress">
@@ -259,11 +274,11 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@mdo</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
           <tr>
-            <th scope="row">8</th>
+            <th scope="row">9</th>
             <td>Gruppi</td>
             <td>
               <div class="progress">
@@ -274,7 +289,7 @@ echo '<script type="text/javascript">',
                 <?php } ?>
               </div>
             </td>
-            <td>@mdo</td>
+            <td><i class="fas fa-exclamation-triangle"></i></td>
           </tr>
 
         </tbody>
