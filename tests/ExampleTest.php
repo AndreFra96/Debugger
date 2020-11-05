@@ -6,11 +6,12 @@ namespace AndreFra96\Debugger;
 
 class ExampleTest extends \PHPUnit\Framework\TestCase
 {
-    public function testDebuggerConstructor(){
+    public function testDebuggerConnection(){
         $debugger = new Debugger();
-        $debugger -> __toString();
-        $this->assertTrue(true);
+        $debugger->connect("localhost","root","","db_ordini");
+        $this->assertTrue($debugger->connectionOk());
     }
+    
     /**
      * Test that true does in fact equal true
      */

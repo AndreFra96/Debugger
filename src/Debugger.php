@@ -31,15 +31,27 @@ class Debugger
 
     /**
      * Post-condizioni:Effettua la connessione con il database attraverso i parametri indicati in input
-     * ,solleva InvalidArgumentException se la connessione al database fallisce
      */
     function connect($servername, $username, $password, $dbname)
     {
-        $conn = new \mysqli($servername, $username, $password, $dbname);
+        set_error_handler(function ($errno, $errstr, $errfile, $errline, $errcontext) {
+            // error was suppressed with the @-operator
+            if (0 === error_reporting()) {
+                return false;
+            }
+
+            throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+        });
+
+        try {
+            $conn = new \mysqli($servername, $username, $password, $dbname);
+        } catch (\ErrorException $e) {
+            return false;
+        }
 
         // Check connection
         if ($conn->connect_error) {
-            throw new \InvalidArgumentException("Parametri di connessione non validi, impossibile stabilire la connessione con il database");
+            return false;
         }
 
         $this->servername = $servername;
@@ -47,6 +59,8 @@ class Debugger
         $this->password = $password;
         $this->dbname = $dbname;
         $this->conn = $conn;
+        
+        return true;
     }
 
     /**
@@ -93,7 +107,32 @@ class Debugger
      */
     function checkOrder()
     {
-        return false;
+
+        $result = $this->conn->query("SELECT count(*)
+        FROM t_order
+        LEFT JOIN t_order_item
+        ON t_order.order_id = t_order_item.order_id
+        WHERE t_order_item.order_id IS NULL");
+        if (($result->fetch_array())['count(*)'] == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    function repairOrder()
+    {
+        if ($result = $this->conn->query("SELECT t_order.order_id
+        FROM t_order
+        LEFT JOIN t_order_item
+        ON t_order.order_id = t_order_item.order_id
+        WHERE t_order_item.order_id IS NULL")) {
+            while ($line = $result->fetch_array()) {
+                $this->conn->query("DELETE FROM t_order WHERE order_id = " . $line['order_id']);
+            }
+        } else {
+            throw new \AndreFra96\Debugger\FalseQueryException();
+        }
     }
 
     /**
@@ -171,7 +210,7 @@ class Debugger
 
     function __toString()
     {
-        $returnString = "Connessione al db " . $this->connectionOk() ? "avvenuta con successo" : "non riuscita";
+        $returnString = "Connessione al db " . ($this->connectionOk() ? "avvenuta con successo" : "non riuscita");
         $returnString .= "Stato ordini: " . ($this->orderStatus ? "Ok" : "Error");
         $returnString .= ", Stato items: " . ($this->itemsStatus ? "Ok" : "Error");
         $returnString .= ", Stato rinnovi: " . ($this->renewStatus ? "Ok" : "Error");
