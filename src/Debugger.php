@@ -250,14 +250,6 @@ class Debugger
     }
 
     /**
-     * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkRenewItems()
-    {
-        return false;
-    }
-
-    /**
      * Post-condizioni: restituisce un array contenente gli rinnovo_id dei rinnovi senza articoli collegati
      *                  solleva FalseQueryException se la query di ricerca restituisce false
      */
@@ -292,6 +284,16 @@ class Debugger
             }
         }
     }
+
+    
+    /**
+     * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
+     */
+    function checkRenewItems()
+    {
+        return false;
+    }
+
 
     /**
      * Post-condizioni: $monthlyStatus diventa true se le verifiche sui mensili danno esito positivo (Non vengono trovati errori), false altrimenti
