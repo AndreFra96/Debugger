@@ -38,8 +38,9 @@ $ composer require AndreFra96/Debugger
 
 ``` php
 $debugger = new AndreFra96\Debugger();
-$debugger->connect("localhost","root","","dbname");
-$debugger->debug();
+$debugger->connect("servername","username","password","dbname");
+$status = $debugger->debug();
+print_r($status);
 ```
 
 ## Change log

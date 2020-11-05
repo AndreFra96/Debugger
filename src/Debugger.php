@@ -203,7 +203,7 @@ class Debugger
      */
     function repairItems()
     {
-        $errors = $this->orderErrors();
+        $errors = $this->itemsErrors();
         foreach ($errors as $index => $value) {
             if (!($this->conn->query("DELETE FROM t_order_item WHERE item_id = " . $value))) {
                 throw new \AndreFra96\Debugger\FalseQueryException();

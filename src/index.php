@@ -67,8 +67,9 @@ $status = $debugger->getStatus();
 if ($debugger->connect($_SESSION['servername'], $_SESSION['username'], $_SESSION['password'], $_SESSION['dbname'])) {
   $debugger->debug();
   $status = $debugger->getStatus();
+  echo "Connesso a ".$_SESSION['dbname']." User: ".$_SESSION['username'];
 } else {
-  echo "Stato db: Nessun database connesso";
+  echo "Nessun database connesso";
 }
 
 
