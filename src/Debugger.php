@@ -291,9 +291,54 @@ class Debugger
      */
     function checkRenewItems()
     {
-        return false;
+        
+        $result = $this->conn->query("SELECT count(*)
+        FROM t_rinnovi_items
+        LEFT JOIN t_rinnovi
+        ON t_rinnovi_items.rinnovo_id = t_rinnovi.rinnovo_id
+        WHERE t_rinnovi.rinnovo_id IS NULL");
+        if (($result->fetch_array())['count(*)'] == 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
+    /**
+     * Post-condizioni: restituisce un array contenente gli id della t_rinnovi_items senza rinnovo collegato
+     *                  solleva FalseQueryException se la query di ricerca restituisce false
+     */
+    function renewItemsErrors()
+    {
+        $renews = [];
+        if ($result = $this->conn->query("SELECT t_rinnovi_items.id
+        FROM t_rinnovi_items
+        LEFT JOIN t_rinnovi
+        ON t_rinnovi_items.rinnovo_id = t_rinnovi.rinnovo_id
+        WHERE t_rinnovi.rinnovo_id IS NULL")) {
+            while ($line = $result->fetch_array()) {
+                array_push($renews, $line['id']);
+            }
+        } else {
+            throw new \AndreFra96\Debugger\FalseQueryException();
+        }
+        return $renews;
+    }
+
+    /**
+     * Effetti-collaterali: effettua delle modifiche alla tabella t_rinnovi_items del database
+     * Post-condizioni: elimina tutti i record della t_rinnovi_items restituiti dalla funzione renewItemsErrors()
+     *                  solleva FalseQueryException se la query restituisce false
+     */
+    function repairRenewItems()
+    {
+        $errors = $this->renewItemsErrors();
+        foreach ($errors as $index => $value) {
+            if (!($this->conn->query("DELETE FROM t_rinnovi_items WHERE id = " . $value))) {
+                throw new \AndreFra96\Debugger\FalseQueryException();
+            }
+        }
+    }
 
     /**
      * Post-condizioni: $monthlyStatus diventa true se le verifiche sui mensili danno esito positivo (Non vengono trovati errori), false altrimenti

@@ -80,6 +80,7 @@ $status = $debugger->getStatus();
 if ($debugger->connect($_SESSION['servername'], $_SESSION['username'], $_SESSION['password'], $_SESSION['dbname'])) {
   $debugger->debug();
   $status = $debugger->getStatus();
+  print_r($debugger->renewItemsErrors());
   echo "Connesso a " . $_SESSION['dbname'] . " - user: " . $_SESSION['username'];
 } else {
   echo "Nessun database connesso";
