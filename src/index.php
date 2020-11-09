@@ -6,7 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="/debugger/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="/debugger/assets/font-awesome/css/all.css" rel="stylesheet">
-
+  <style>
+    .modal-dialog {
+      position: relative;
+      display: table;
+      /* This is important */
+      overflow-y: auto;
+      overflow-x: auto;
+      width: auto;
+      /* min-width: 350px; */
+    }
+  </style>
 
   <h1>Index di Debugger</h1>
 
@@ -50,65 +60,83 @@
 /////END DB CONNECTION MODAL//////
 ///////////////////////////////-->
 
-<?php
-////////////////////////////
-/////START PHP SECTION//////
-////////////////////////////
-
-session_start();
-
-if (!isset($_SESSION['servername'])) {
-  $_SESSION['servername'] = "";
-  $_SESSION['username'] = "";
-  $_SESSION['password'] = "";
-  $_SESSION['dbname'] = "";
-}
-
-if (isset($_POST['servername'])) {
-  $_SESSION['servername'] = $_POST['servername'];
-  $_SESSION['username'] = $_POST['username'];
-  $_SESSION['password'] = $_POST['password'];
-  $_SESSION['dbname'] = $_POST['dbname'];
-}
-
-use AndreFra96\Debugger\Debugger;
-
-require_once "../vendor/autoload.php";
-$debugger = new Debugger();
-$status = $debugger->getStatus();
-
-if ($debugger->connect($_SESSION['servername'], $_SESSION['username'], $_SESSION['password'], $_SESSION['dbname'])) {
-  $debugger->debug();
-  $status = $debugger->getStatus();
-  print_r($debugger->renewItemsErrors());
-  echo "Connesso a " . $_SESSION['dbname'] . " - user: " . $_SESSION['username'];
-} else {
-  echo "Nessun database connesso";
-}
-
-
-
-
-
-echo '<script type="text/javascript">',
-  'document.getElementById("servername").value = "' . $_SESSION['servername'] . '";',
-  'document.getElementById("username").value = "' . $_SESSION['username'] . '";',
-  'document.getElementById("password").value = "' . $_SESSION['password'] . '";',
-  'document.getElementById("dbname").value = "' . $_SESSION['dbname'] . '"',
-  '</script>';
-
-//////////////////////////
-/////END PHP SECTION//////
-//////////////////////////
-?>
-
 <body>
+
+  <?php
+  ////////////////////////////
+  /////START PHP SECTION//////
+  ////////////////////////////
+
+  //SAVING IN SESSION DB CONNECTION DATA
+  session_start();
+
+  if (!isset($_SESSION['servername'])) {
+    $_SESSION['servername'] = "";
+    $_SESSION['username'] = "";
+    $_SESSION['password'] = "";
+    $_SESSION['dbname'] = "";
+  }
+
+  if (isset($_POST['servername'])) {
+    $_SESSION['servername'] = $_POST['servername'];
+    $_SESSION['username'] = $_POST['username'];
+    $_SESSION['password'] = $_POST['password'];
+    $_SESSION['dbname'] = $_POST['dbname'];
+  }
+
+
+  use AndreFra96\Debugger\Debugger; //use Debugger
+
+  //require composer autoload an custom functions
+  require_once "../vendor/autoload.php";
+  require_once "php/phpfunc.php";
+
+
+  $debugger = new Debugger(); //Init debugger
+  $tableRows = "";
+  //Attempt to connect
+  if (!($debugger->connect($_SESSION['servername'], $_SESSION['username'], $_SESSION['password'], $_SESSION['dbname']))) {
+    echo "Nessun database connesso"; //Connection failed
+  } else {
+    echo "Connesso a " . $_SESSION['dbname'] . " - user: " . $_SESSION['username']; //Connection success
+    //try load tests from file
+    try {
+      $debugger->loadTestsFromFile("txt/data.txt");
+    } catch (Exception $e) {
+      echo " Impossibile caricare i test dal file"; //Errors in tests upload
+    }
+    //Build table rows
+    if ($debugger->tests() != []) {
+      foreach ($debugger->tests() as $id => $content) {
+        $tableRows .= $debugger->asTableRow($id);
+        // print_r($debugger->debugData($id));
+        echo createModal($debugger->debugData($id),"test".$id);
+      }
+    }
+  }
+
+  //Set db connection modal fields with javascript
+  echo '<script type="text/javascript">',
+    'document.getElementById("servername").value = "' . $_SESSION['servername'] . '";',
+    'document.getElementById("username").value = "' . $_SESSION['username'] . '";',
+    'document.getElementById("password").value = "' . $_SESSION['password'] . '";',
+    'document.getElementById("dbname").value = "' . $_SESSION['dbname'] . '"',
+    '</script>';
+
+
+  //////////////////////////
+  /////END PHP SECTION//////
+  //////////////////////////
+  ?>
+
 
   <!--///////////////////
   /////START NAVBAR//////
   ////////////////////-->
   <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-    <a class="navbar-brand" href="#">Debugger</a>
+    <a class="navbar-brand" href="#">
+      <img src="img/debugger.png" width="100" height="30" alt="">
+    </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -117,18 +145,14 @@ echo '<script type="text/javascript">',
       <ul class="navbar-nav mr-auto">
 
         <li class="nav-item">
-          <a class="nav-link" id="toggleDebugging" href="#"></a>
+          <a class="nav-link" id="toggleDebugging" href="#" data-toggle="tooltip" data-placement="bottom" title="Debug"></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" data-toggle="modal" data-target="#exampleModalCenter" href="#">Database</a>
+
+          <a class="nav-link" href="#exampleModalCenter" data-toggle="tooltip" data-placement="bottom" title="Connessione DB"><i class="fas fa-database" data-toggle="modal" data-target="#exampleModalCenter"></i></a>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="http://example.com" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Opzioni</a>
-          <div class="dropdown-menu" aria-labelledby="dropdown01">
-            <a class="dropdown-item" href="#">Action</a>
-            <a class="dropdown-item" href="#">Another action</a>
-            <a class="dropdown-item" href="#">Something else here</a>
-          </div>
+        <li class="nav-item">
+          <a class="nav-link" href="#" id="toggleDraggableTable" onclick="toggleDraggable()" data-toggle="tooltip" data-placement="bottom" title="Movimento righe"><i class="fas fa-arrows-alt"></i></a>
         </li>
       </ul>
       <form class="form-inline my-2 my-lg-0">
@@ -147,152 +171,21 @@ echo '<script type="text/javascript">',
       <!--/////////////////
       /////START TABLE/////
       //////////////////-->
-      <table class="table table-hover" style="text-align:center">
+      <table id="draggableTable" class="table table-hover" style="text-align:center">
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">Test</th>
-            <th scope="col">Stato</th>
-            <th scope="col">Errori</th>
+            <th scope="col">Testing Case</th>
+            <th scope="col">Status</th>
+            <th scope="col">Bugs</th>
           </tr>
         </thead>
         <tbody>
-
-          <tr>
-            <th scope="row">1</th>
-            <td>Ordini senza items</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['orderStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">2</th>
-            <td>Items senza ordine</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['itemsStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">3</th>
-            <td>Rinnovi senza items</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['renewStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">4</th>
-            <td>Items senza rinnovo</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['renewItemsStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">5</th>
-            <td>Mensili</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['monthlyStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">6</th>
-            <td>Seriali</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['serialStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">7</th>
-            <td>Clienti</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['customerStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">8</th>
-            <td>Locali</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['locationStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
-          <tr>
-            <th scope="row">9</th>
-            <td>Gruppi</td>
-            <td>
-              <div class="progress">
-                <?php if ($status['groupStatus']) { ?>
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } else { ?>
-                  <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                <?php } ?>
-              </div>
-            </td>
-            <td><i class="fas fa-exclamation-triangle"></i></td>
-          </tr>
-
+          <?php
+          //////PRINT TABLE ROWS//////
+          echo $tableRows;
+          ///////END TABLE ROWS///////
+          ?>
         </tbody>
       </table>
       <!--/////////////////
@@ -302,13 +195,33 @@ echo '<script type="text/javascript">',
   </div>
 
 </body>
-
+<!-- jquery -->
 <script type="text/javascript" src="assets/jquery/jquery.min.js"></script>
+<!-- tablednd for draggable table -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/TableDnD/0.9.1/jquery.tablednd.js" integrity="sha256-d3rtug+Hg1GZPB7Y/yTcRixO/wlI78+2m08tosoRn7A=" crossorigin="anonymous"></script>
+<!-- popper.js for tooltips  -->
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<!-- bootstrap -->
 <script type="text/javascript" src="assets/bootstrap/dist/js/bootstrap.min.js"></script>
 <script>
   //////////////////////////////////
   /////START JAVASCRIPT SECTION/////
   //////////////////////////////////
+
+  window.onload = function() {
+    $('[data-toggle="tooltip"]').tooltip(); //Enable tooltip
+    if (sessionStorage.getItem("draggable") == 1) { //Enable draggable if 1 in localStorange
+      $("#draggableTable").tableDnD();
+    }
+  };
+
+  //toggle table drag
+  function toggleDraggable() {
+    sessionStorage.setItem("draggable", sessionStorage.getItem("draggable") == 1 ? 0 : 1);
+    location.href = "http://" + location.hostname + "/debugger";
+  }
+
+  //continous debugging by page reload
   var toggleDebugging = document.getElementById("toggleDebugging");
   var timeout;
   if (sessionStorage.getItem("debuggingLoop") == 1) {

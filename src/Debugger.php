@@ -4,31 +4,50 @@ declare(strict_types=1);
 
 namespace AndreFra96\Debugger;
 
+
 /**
  * OVERVIEW: Le istanze di questa classe rappresentano blocchi di debugging del software
  * 
- * Funzione di astrazione: Gli attributi della classe rappresentano lo stato attuale della porzione di programma a cui si riferiscono, 
- * un valore true rappresenta il corretto funzionamento della sezione un valore false invece evidenzia delle criticità nella sezione
+ * Il Debugger è rappresentato attraverso dei parametri di connessione ad un database, 
+ * una connessione a tale database e un insieme di possibili test da effettuare 
  * 
- * Invariante di rappresentazione: Gli attributi della classe assumono solamente valori booleani, 
- * fatta eccezione per l'attributo relativo al file di connessione con il database
+ * Per preparare un Debugger all'esecuzione di test è necessario stabilire una connessione al database 
+ * attraverso il metodo connect() che prende in input i parametri di connessione al db,
+ * se questo metodo restituisce true possiamo proseguire con le operazioni.
+ * E' possibile verificare lo stato attuale di connessione ad database attraverso il metodo connectionOK.
+ * tests è un array (possibilmente vuoto) che rappresenta una mappa di questo tipo:
+ * 
+ * {
+ * TESTID => ['loc_desc'=> ... , 'query' => ...],
+ * TESTID => ['loc_desc'=> ... , 'query' => ...],
+ * TESTID => ['loc_desc'=> ... , 'query' => ...]
+ * }
  */
 class Debugger
 {
-    private $orderStatus;
-    private $itemsStatus;
-    private $renewStatus;
-    private $renewItemsStatus;
-    private $monthlyStatus;
-    private $serialStatus;
-    private $customerStatus;
-    private $locationStatus;
-    private $groupStatus;
+
     private $conn;
     private $servername;
     private $username;
     private $password;
     private $dbname;
+    private $tests;
+
+    /**
+     * Post-condizioni: inizializza un nuovo Debugger, non connesso ad alcun database e con l'array di test = []
+     */
+    function __construct()
+    {
+        $this->tests = [];
+    }
+
+    /**
+     * Post-condizioni: restituisce un array contenente i test presenti nel Debugger
+     */
+    function tests()
+    {
+        return $this->tests;
+    }
 
     /**
      * Post-condizioni:Effettua la connessione con il database attraverso i parametri indicati in input
@@ -65,6 +84,36 @@ class Debugger
     }
 
     /**
+     * Effetti-collaterali: potrebbe modificare this
+     * Post-condizioni: legge il file il input e inserisce in $this->tests i test letti.
+     *                  il formato di $this->tests è : [testid=>['query'=>... , 'loc_desc'=> ...], testid=>['query'=> ... , 'loc_desc' => ...], ... ]
+     */
+    function loadTestsFromFile($file)
+    {
+        require_once "exceptions/FileNotFoundException.php";
+        $tests = [];
+        try {
+            $connection = fopen($file, "r");
+            while (!feof($connection)) {
+                $line = fgets($connection);
+                $line = explode("|", $line);
+                $id = $line[0];
+                $line = [
+                    'loc_desc' => $line[1],
+                    'query' => $line[2]
+                ];
+                $tests[$id] = $line;
+            }
+        } catch (\ErrorException $e) {
+            throw new FileNotFoundException("File non trovato o non formattato correttamente");
+        } finally {
+            fclose($connection);
+        }
+        $this->tests = $tests;
+        return $tests;
+    }
+
+    /**
      * Post-condizioni: restituisce un array contente i parametri di connessione al database attuali del Debugger
      */
     function getParameter()
@@ -88,22 +137,66 @@ class Debugger
     }
 
     /**
-     * Post-condizioni: restituisce un array contenente le informazioni attuali sugli stati, es: [orderStatus=>true,itemStatus=>true...]
+     * Post-condizioni: restituisce una progressbar verde se $status è true, rossa altrimenti
      */
-    function getStatus()
+    private function _progressBar($status)
     {
-        return [
-            "orderStatus" => $this->orderStatus,
-            "itemsStatus" => $this->itemsStatus,
-            "renewStatus" => $this->renewStatus,
-            "renewItemsStatus" => $this->renewItemsStatus,
-            "monthlyStatus" => $this->monthlyStatus,
-            "serialStatus" => $this->serialStatus,
-            "customerStatus" => $this->customerStatus,
-            "locationStatus" => $this->locationStatus,
-            "groupStatus" => $this->groupStatus
-        ];
+        $HTMLstring = '<div class="progress">';
+        if ($status) {
+            $HTMLstring .= '<div class="progress-bar bg-success" role="progressbar" aria-valuenow="100"';
+        } else {
+            $HTMLstring .= '<div class="progress-bar bg-danger" role="progressbar" aria-valuenow="100"';
+        }
+        $HTMLstring .= 'aria-valuemin="0" aria-valuemax="100" style="width:100%">' . '</div>' . '</div>';
+
+        return $HTMLstring;
     }
+
+    /**
+     * Post-condizioni: restituisce una stringa corrispondente alla rappresentazione del test indicato in input sotto forma di riga di una tabella
+     */
+    function asTableRow($testid)
+    {
+        $returnString = "<tr>";
+        if ($this->tests[$testid]) {
+            $test = $this->tests[$testid];
+            $returnString .= "<th scope='row'>" . $testid . "</th>";
+            $returnString .= "<td>" . $test['loc_desc'] . "</td>";
+            $returnString .= $this->debugSpecific($testid) ?
+                "<td>" . $this->_progressBar(true) . "</td>" . "<td></td>" :
+                "<td>" . $this->_progressBar(false) . "</td>" . "<td>" . '<span data-toggle="tooltip" data-placement="right" title="Visualizza errori"><i class="fas fa-bug" style="cursor:pointer;" data-toggle="modal" data-target="#test' . $testid . '"></i></span>' . "</td>";
+        }
+        return $returnString . "</tr>";
+    }
+
+    /**
+     * Post-condizioni: restituisce true se la query di ricerca errori restituisce zero righe, false altrimenti
+     */
+    function debugSpecific($testid)
+    {
+        $result = $this->conn->query($this->tests[$testid]['query']);
+        if (($result->num_rows) == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Post-condizioni: restituisce le righe corrispondenti agli errori sotto forma di array, 
+     * se non ci sono errori restituisce un array vuoto
+     */
+    function debugData($testid)
+    {
+        $data = [];
+        $result = $this->conn->query($this->tests[$testid]['query']);
+        while ($line = $result->fetch_assoc()) {
+            array_push($data, $line);
+        }
+        return $data;
+    }
+
+    
 
     /**
      * - Effetti-collaterali: Potrebbe modificare lo stato di this, aggiornando lo stato dei diversi attributi in base alla loro validità attuale
@@ -112,275 +205,18 @@ class Debugger
      */
     function debug()
     {
-        $this->orderStatus = $this->checkOrder();
-        $this->itemsStatus = $this->checkItems();
-        $this->renewStatus = $this->checkRenew();
-        $this->renewItemsStatus = $this->checkRenewItems();
-        $this->monthlyStatus = $this->checkMonthly();
-        $this->serialStatus = $this->checkSerial();
-        $this->customerStatus = $this->checkCustomer();
-        $this->locationStatus = $this->checkLocation();
-        $this->groupStatus = $this->checkGroup();
-        return $this->getStatus();
+        // $this->orderStatus = $this->checkOrder();
+        // $this->itemsStatus = $this->checkItems();
+        // $this->renewStatus = $this->checkRenew();
+        // $this->renewItemsStatus = $this->checkRenewItems();
+        // $this->monthlyStatus = $this->checkMonthly();
+        // $this->serialStatus = $this->checkSerial();
+        // $this->customerStatus = $this->checkCustomer();
+        // $this->locationStatus = $this->checkLocation();
+        // $this->groupStatus = $this->checkGroup();
+        // return $this->getStatus();
     }
 
-    /**
-     * Post-condizioni: $orderStatus diventa true se le verifiche sugli ordini danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkOrder()
-    {
-
-        $result = $this->conn->query("SELECT count(*)
-        FROM t_order
-        LEFT JOIN t_order_item
-        ON t_order.order_id = t_order_item.order_id
-        WHERE t_order_item.order_id IS NULL");
-        if (($result->fetch_array())['count(*)'] == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Post-condizioni: restituisce un array contenente gli order_id degli ordini senza articoli collegati
-     *                  solleva FalseQueryException se la query di ricerca restituisce false
-     */
-    function orderErrors()
-    {
-        $orders = [];
-        if ($result = $this->conn->query("SELECT t_order.order_id
-        FROM t_order
-        LEFT JOIN t_order_item
-        ON t_order.order_id = t_order_item.order_id
-        WHERE t_order_item.order_id IS NULL")) {
-            while ($line = $result->fetch_array()) {
-                array_push($orders, $line['order_id']);
-            }
-        } else {
-            throw new \AndreFra96\Debugger\FalseQueryException();
-        }
-        return $orders;
-    }
-
-    /**
-     * Effetti-collaterali: effettua delle modifiche alla tabella t_order del database
-     * Post-condizioni: elimina tutti i record della t_order restituiti dalla funzione orderErrors()
-     *                  solleva FalseQueryException se la query restituisce false
-     */
-    function repairOrder()
-    {
-        $errors = $this->orderErrors();
-        foreach ($errors as $index => $value) {
-            if (!($this->conn->query("DELETE FROM t_order WHERE order_id = " . $value))) {
-                throw new \AndreFra96\Debugger\FalseQueryException();
-            }
-        }
-    }
-
-    /**
-     * Post-condizioni: $itemsStatus diventa true se le verifiche sugli items danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkItems()
-    {
-        $result = $this->conn->query("SELECT count(*)
-        FROM t_order_item
-        LEFT JOIN t_order
-        ON t_order_item.order_id = t_order.order_id
-        WHERE t_order.order_id IS NULL");
-        if (($result->fetch_array())['count(*)'] == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Post-condizioni: restituisce un array contenente gli item_id degli articoli senza ordine collegato
-     *                  solleva FalseQueryException se la query di ricerca restituisce false
-     */
-    function itemsErrors()
-    {
-        $items = [];
-        if ($result = $this->conn->query("SELECT t_order_item.item_id
-        FROM t_order_item
-        LEFT JOIN t_order
-        ON t_order_item.order_id = t_order.order_id
-        WHERE t_order.order_id IS NULL")) {
-            while ($line = $result->fetch_array()) {
-                array_push($items, $line['item_id']);
-            }
-        } else {
-            throw new \AndreFra96\Debugger\FalseQueryException();
-        }
-        return $items;
-    }
-
-    /**
-     * Effetti-collaterali: effettua delle modifiche alla tabella t_order del database
-     * Post-condizioni: elimina tutti i record della t_order_item restituiti dalla funzione itemsErrors()
-     *                  solleva FalseQueryException se la query restituisce false
-     */
-    function repairItems()
-    {
-        $errors = $this->itemsErrors();
-        foreach ($errors as $index => $value) {
-            if (!($this->conn->query("DELETE FROM t_order_item WHERE item_id = " . $value))) {
-                throw new \AndreFra96\Debugger\FalseQueryException();
-            }
-        }
-    }
-
-
-    /**
-     * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkRenew()
-    {
-        $result = $this->conn->query("SELECT count(*)
-        FROM t_rinnovi
-        LEFT JOIN t_rinnovi_items
-        ON t_rinnovi.rinnovo_id = t_rinnovi_items.rinnovo_id
-        WHERE t_rinnovi_items.rinnovo_id IS NULL");
-        if (($result->fetch_array())['count(*)'] == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Post-condizioni: restituisce un array contenente gli rinnovo_id dei rinnovi senza articoli collegati
-     *                  solleva FalseQueryException se la query di ricerca restituisce false
-     */
-    function renewErrors()
-    {
-        $renews = [];
-        if ($result = $this->conn->query("SELECT t_rinnovi.rinnovo_id
-        FROM t_rinnovi
-        LEFT JOIN t_rinnovi_items
-        ON t_rinnovi.rinnovo_id = t_rinnovi_items.rinnovo_id
-        WHERE t_rinnovi_items.rinnovo_id IS NULL")) {
-            while ($line = $result->fetch_array()) {
-                array_push($renews, $line['rinnovo_id']);
-            }
-        } else {
-            throw new \AndreFra96\Debugger\FalseQueryException();
-        }
-        return $renews;
-    }
-
-    /**
-     * Effetti-collaterali: effettua delle modifiche alla tabella t_rinnovi del database
-     * Post-condizioni: elimina tutti i record della t_rinnovi restituiti dalla funzione renewErrors()
-     *                  solleva FalseQueryException se la query restituisce false
-     */
-    function repairRenew()
-    {
-        $errors = $this->renewErrors();
-        foreach ($errors as $index => $value) {
-            if (!($this->conn->query("DELETE FROM t_rinnovi WHERE rinnovo_id = " . $value))) {
-                throw new \AndreFra96\Debugger\FalseQueryException();
-            }
-        }
-    }
-
-    
-    /**
-     * Post-condizioni: $renewStatus diventa true se le verifiche sui rinnovi danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkRenewItems()
-    {
-        
-        $result = $this->conn->query("SELECT count(*)
-        FROM t_rinnovi_items
-        LEFT JOIN t_rinnovi
-        ON t_rinnovi_items.rinnovo_id = t_rinnovi.rinnovo_id
-        WHERE t_rinnovi.rinnovo_id IS NULL");
-        if (($result->fetch_array())['count(*)'] == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Post-condizioni: restituisce un array contenente gli id della t_rinnovi_items senza rinnovo collegato
-     *                  solleva FalseQueryException se la query di ricerca restituisce false
-     */
-    function renewItemsErrors()
-    {
-        $renews = [];
-        if ($result = $this->conn->query("SELECT t_rinnovi_items.id
-        FROM t_rinnovi_items
-        LEFT JOIN t_rinnovi
-        ON t_rinnovi_items.rinnovo_id = t_rinnovi.rinnovo_id
-        WHERE t_rinnovi.rinnovo_id IS NULL")) {
-            while ($line = $result->fetch_array()) {
-                array_push($renews, $line['id']);
-            }
-        } else {
-            throw new \AndreFra96\Debugger\FalseQueryException();
-        }
-        return $renews;
-    }
-
-    /**
-     * Effetti-collaterali: effettua delle modifiche alla tabella t_rinnovi_items del database
-     * Post-condizioni: elimina tutti i record della t_rinnovi_items restituiti dalla funzione renewItemsErrors()
-     *                  solleva FalseQueryException se la query restituisce false
-     */
-    function repairRenewItems()
-    {
-        $errors = $this->renewItemsErrors();
-        foreach ($errors as $index => $value) {
-            if (!($this->conn->query("DELETE FROM t_rinnovi_items WHERE id = " . $value))) {
-                throw new \AndreFra96\Debugger\FalseQueryException();
-            }
-        }
-    }
-
-    /**
-     * Post-condizioni: $monthlyStatus diventa true se le verifiche sui mensili danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkMonthly()
-    {
-        return false;
-    }
-
-    /**
-     * Post-condizioni: $serialStatus diventa true se le verifiche sui seriali danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkSerial()
-    {
-        return false;
-    }
-
-    /**
-     * Post-condizioni: $customerStatus diventa true se le verifiche sui clienti danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkCustomer()
-    {
-        return false;
-    }
-
-    /**
-     * Post-condizioni: $locationStatus diventa true se le verifiche sui locali danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkLocation()
-    {
-        return false;
-    }
-
-    /**
-     * Post-condizioni: $groupStatus diventa true se le verifiche sui gruppi danno esito positivo (Non vengono trovati errori), false altrimenti
-     */
-    function checkGroup()
-    {
-        return false;
-    }
-
-    
 
     function __toString()
     {
