@@ -7,9 +7,12 @@
 [![Quality Score][ico-code-quality]][link-code-quality]
 [![Total Downloads][ico-downloads]][link-downloads]
 
-Debugger fornisce strumenti di supporto per il mantenimento di un progetto specifico: preventivatore per RCA srl.
+Debugger fornisce strumenti di supporto per il controllo dei dati all'interno di un database.
 
-Attraverso Debugger è possibile ricevere informazioni sul corretto funzionamento dell'applicativo web, in particolare Debugger fornisce una serie di metodi per controllare l'integrita del database collegato
+Attraverso Debugger è possibile ricevere informazioni sul corretto funzionamento dell'applicativo web, in particolare Debugger fornisce una serie di metodi per controllare l'integrita del database collegato.
+
+Debugger legge una serie di query di test, le query devono restituire le righe corrispondenti agli errori nel database. 
+Se la query contiene zero righe allora non sono presenti errori.
 
 ## Structure
 
@@ -39,8 +42,8 @@ $ composer require AndreFra96/Debugger
 ``` php
 $debugger = new AndreFra96\Debugger();
 $debugger->connect("servername","username","password","dbname");
-$status = $debugger->debug();
-print_r($status);
+if!($debugger->debugSpecific($testid))
+    $bugs = $debugger.debugData($testid);
 ```
 
 ## Change log
