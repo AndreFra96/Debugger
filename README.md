@@ -41,9 +41,11 @@ $ composer require AndreFra96/Debugger
 
 ``` php
 $debugger = new AndreFra96\Debugger();
-$debugger->connect("servername","username","password","dbname");
-if!($debugger->debugSpecific($testid))
-    $bugs = $debugger.debugData($testid);
+if($debugger->connect("servername","username","password","dbname")){
+    if(!($debugger->debugSpecific($testid)))
+        $bugs = $debugger.debugData($testid);
+}
+
 ```
 
 ## Change log
