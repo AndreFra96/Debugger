@@ -26,12 +26,12 @@ namespace AndreFra96\Debugger;
 class Debugger
 {
 
-    private $conn;
-    private $servername;
-    private $username;
-    private $password;
-    private $dbname;
-    private $tests;
+    private $conn;       //mysqli object
+    private $servername; //string
+    private $username;   //string
+    private $password;   //string
+    private $dbname;     //string
+    private $tests;      //array
 
     /**
      * Post-condizioni: inizializza un nuovo Debugger, non connesso ad alcun database e con l'array di test = []
@@ -50,7 +50,8 @@ class Debugger
     }
 
     /**
-     * Post-condizioni:Effettua la connessione con il database attraverso i parametri indicati in input
+     * Post-condizioni:Effettua la connessione con il database attraverso i parametri indicati in input. 
+     * Restituisce true se la connessione viene effettuata con successo, false altrimenti
      */
     function connect($servername, $username, $password, $dbname)
     {
@@ -218,17 +219,17 @@ class Debugger
     }
 
 
-    function __toString()
-    {
-        $returnString = "Connessione al db " . ($this->connectionOk() ? "avvenuta con successo" : "non riuscita");
-        $returnString .= "Stato ordini: " . ($this->orderStatus ? "Ok" : "Error");
-        $returnString .= ", Stato items: " . ($this->itemsStatus ? "Ok" : "Error");
-        $returnString .= ", Stato rinnovi: " . ($this->renewStatus ? "Ok" : "Error");
-        $returnString .= ", Stato mensili: " . ($this->monthlyStatus ? "Ok" : "Error");
-        $returnString .= ", Stato seriali: " . ($this->serialStatus ? "Ok" : "Error");
-        $returnString .= ", Stato clienti: " . ($this->customerStatus ? "Ok" : "Error");
-        $returnString .= ", Stato locali: " . ($this->locationStatus ? "Ok" : "Error");
-        $returnString .= ", Stato gruppi: " . ($this->groupStatus ? "Ok" : "Error");
-        return $returnString;
-    }
+    // function __toString()
+    // {
+    //     $returnString = "Connessione al db " . ($this->connectionOk() ? "avvenuta con successo" : "non riuscita");
+    //     $returnString .= "Stato ordini: " . ($this->orderStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato items: " . ($this->itemsStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato rinnovi: " . ($this->renewStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato mensili: " . ($this->monthlyStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato seriali: " . ($this->serialStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato clienti: " . ($this->customerStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato locali: " . ($this->locationStatus ? "Ok" : "Error");
+    //     $returnString .= ", Stato gruppi: " . ($this->groupStatus ? "Ok" : "Error");
+    //     return $returnString;
+    // }
 }
