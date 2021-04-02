@@ -6,3 +6,4 @@
 6|rinnovi senza locale|SELECT t_rinnovi.rinnovo_id,t_rinnovi.rinnovo_customer_id,t_rinnovi.rinnovo_location_id,t_rinnovi.rinnovo_month_reference,t_rinnovi.previous_rinnovo_id FROM `t_rinnovi` WHERE rinnovo_location_id is null or rinnovo_location_id = 0
 7|mensili senza pagamento|SELECT * FROM `t_monthly` where monthly_payment_id is null or monthly_payment_id LIKE ''
 8|mensili senza fatturazione|SELECT * FROM `t_monthly` where t_monthly.monthly_type_billing is null or t_monthly.monthly_type_billing LIKE ''
+9|annuali senza corrispondenza in trace|SELECT t_monthly.*,t_monthly_items.* FROM t_monthly,t_monthly_items LEFT JOIN t_trace ON t_trace.monthly_id = t_monthly_items.t_monthly_items_id WHERE t_monthly.monthly_id = t_monthly_items.monthly_id AND t_trace.id IS NULL
